@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# This script displays lines containing bash to show Bash PIDs
+# shellcheck disable=SC2009
+ps auxf | grep bash
