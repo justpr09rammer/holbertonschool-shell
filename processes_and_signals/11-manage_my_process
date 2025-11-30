@@ -10,21 +10,25 @@ case "$1" in
         ;;
     stop)
         # Stop the process and remove PID file
-        kill "$(cat /var/run/my_process.pid)" 2>/dev/null
-        rm -f /var/run/my_process.pid
+        if [ -f /var/run/my_process.pid ]; then
+            kill "$(cat /var/run/my_process.pid)" 2>/dev/null
+            rm -f /var/run/my_process.pid
+        fi
         echo "manage_my_process stopped"
         ;;
     restart)
         # Stop then start the process
-        kill "$(cat /var/run/my_process.pid)" 2>/dev/null
-        rm -f /var/run/my_process.pid
+        if [ -f /var/run/my_process.pid ]; then
+            kill "$(cat /var/run/my_process.pid)" 2>/dev/null
+            rm -f /var/run/my_process.pid
+        fi
         ./manage_my_process &
         echo $! > /var/run/my_process.pid
         echo "manage_my_process restarted"
         ;;
     *)
         # Invalid argument
-        echo "Usage: manage_my_process {start|stop|restart}"
+        echo "Usage: $0 {start|stop|restart}"
         exit 1
         ;;
 esac
