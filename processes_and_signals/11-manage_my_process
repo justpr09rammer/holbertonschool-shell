@@ -6,24 +6,31 @@ case "$1" in
         # Start the process and create PID file
         ./manage_my_process &
         PID=$!
-        # Try to create PID file in /var/run, fallback to current directory if no permission
-        if touch /var/run/my_process.pid 2>/dev/null; then
-            echo $PID > /var/run/my_process.pid
+        # Try to create PID file in /var/run
+        if echo $PID > /var/run/my_process.pid 2>/dev/null; then
+            echo "manage_my_process started"
         else
-            echo $PID > ./my_process.pid
+            # If no permission, create in /tmp and create symlink
+            echo $PID > /tmp/my_process.pid
+            # Try to create symlink to /var/run (this might also fail)
+            ln -sf /tmp/my_process.pid /var/run/my_process.pid 2>/dev/null || true
+            echo "manage_my_process started"
         fi
-        echo "manage_my_process started"
         ;;
     stop)
         # Stop the process and remove PID file
-        # Try /var/run first, then current directory
+        # Try multiple locations for PID file
         if [ -f /var/run/my_process.pid ]; then
             kill "$(cat /var/run/my_process.pid)" 2>/dev/null
             rm -f /var/run/my_process.pid
-        elif [ -f ./my_process.pid ]; then
-            kill "$(cat ./my_process.pid)" 2>/dev/null
-            rm -f ./my_process.pid
         fi
+        # Also remove the actual file if it exists in /tmp
+        if [ -f /tmp/my_process.pid ]; then
+            kill "$(cat /tmp/my_process.pid)" 2>/dev/null
+            rm -f /tmp/my_process.pid
+        fi
+        # Remove any broken symlinks
+        rm -f /var/run/my_process.pid 2>/dev/null || true
         echo "manage_my_process stopped"
         ;;
     restart)
@@ -32,21 +39,23 @@ case "$1" in
         if [ -f /var/run/my_process.pid ]; then
             kill "$(cat /var/run/my_process.pid)" 2>/dev/null
             rm -f /var/run/my_process.pid
-        elif [ -f ./my_process.pid ]; then
-            kill "$(cat ./my_process.pid)" 2>/dev/null
-            rm -f ./my_process.pid
         fi
-        
+        if [ -f /tmp/my_process.pid ]; then
+            kill "$(cat /tmp/my_process.pid)" 2>/dev/null
+            rm -f /tmp/my_process.pid
+        fi
+        rm -f /var/run/my_process.pid 2>/dev/null || true
+
         # Start part
         ./manage_my_process &
         PID=$!
-        # Try to create PID file in /var/run, fallback to current directory if no permission
-        if touch /var/run/my_process.pid 2>/dev/null; then
-            echo $PID > /var/run/my_process.pid
+        if echo $PID > /var/run/my_process.pid 2>/dev/null; then
+            echo "manage_my_process restarted"
         else
-            echo $PID > ./my_process.pid
+            echo $PID > /tmp/my_process.pid
+            ln -sf /tmp/my_process.pid /var/run/my_process.pid 2>/dev/null || true
+            echo "manage_my_process restarted"
         fi
-        echo "manage_my_process restarted"
         ;;
     *)
         # Invalid argument
