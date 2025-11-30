@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# This script creates a PID file and handles multiple signals
+
+# Create PID file
+echo $$ > /var/run/myscript.pid
+
+# Cleanup function
+cleanup() {
+    rm -f /var/run/myscript.pid
+    exit 0
+}
+
+# Signal handlers
+trap 'echo "I hate the kill command"' SIGTERM
+trap 'echo "Y U no love me?!"' SIGINT
+trap cleanup SIGQUIT
+
+# Main loop
+while true; do
+    echo "To infinity and beyond"
+    sleep 2
+done
+
+# Cleanup on normal exit
+cleanup
